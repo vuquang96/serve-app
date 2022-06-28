@@ -8,6 +8,10 @@ use App\Models\UserRequest;
 use App\Models\Csgoroll;
 use DB;
 use Carbon\Carbon;
+use App\Models\CbMarketBuff;
+use App\Models\CbMarketCsgoroll;
+use App\Models\CbMarketInventory;
+
 
 class ProductController extends Controller
 {
@@ -42,5 +46,85 @@ class ProductController extends Controller
                                     ->get();
         
         return view('product.detail')->with(['csgoroll' => $csgoroll]);
+    }
+
+    public function buffCsgoroll(Request $request)
+    {
+        $rateBuff               = $data['buff'] ?? 3.7;
+        $rateCsgoroll           = $data['csgoroll'] ?? 14.4;
+        $inventory = $this->getInventory($request);
+
+        return view('buff_csgoroll.list', compact('rateBuff', 'rateCsgoroll', 'inventory'));
+    }
+
+    private function getInventory(Request $request){
+        $data = $request->all();
+        $rateBuff               = $data['buff'] ?? 3.7;
+        $rateCsgoroll           = $data['csgoroll'] ?? 14.4;
+
+        $marketInventory = CbMarketInventory::all();
+
+        foreach($marketInventory as $item){
+            $name       = $item->name;
+            $csgoroll   = CbMarketCsgoroll::where('name', $name)
+                                        ->selectRaw('name, price, CAST(price as DECIMAL(9,2)) _price')
+                                        ->orderBy('_price', 'ASC')->first();
+            $buff       = CbMarketBuff::where('name', $name)
+                                        ->selectRaw('name, price, CAST(price as DECIMAL(9,2)) _price')
+                                        ->orderBy('_price', 'ASC')->first();
+            $max        = 0;
+            $min        = 0;
+
+            // csgoroll
+            if($csgoroll) {
+                if($csgoroll->price != 0) {
+                    $priceCsgoroll = (double)$csgoroll->price  * (double)$rateCsgoroll;
+                
+                    /*if($priceCsgoroll > $max) {
+                        $max = $priceCsgoroll;
+                        $item->tick = 'csgoroll';
+                    }*/
+
+                    if($priceCsgoroll < $min) {
+                        $min = $priceCsgoroll;
+                        $item->tick = 'csgoroll';
+                    }
+
+                    $item->csgoroll = $this->formatPrice($csgoroll->price, $priceCsgoroll);
+                } else {
+                    $item->csgoroll = '';
+                }
+            }
+
+            // buff
+            if($buff) {
+                $priceBuff = (double)$buff->price * (double)$rateBuff;
+
+                /*if($priceBuff > $max) {
+                    $max = $priceBuff;
+                    $item->tick = 'buff';
+                }*/
+
+                if($priceBuff < $min) {
+                    $min = $priceBuff;
+                    $item->tick = 'buff';
+                }
+
+                $item->buff = $this->formatPrice($buff->price, $priceBuff);
+                $item->buff_sort = (double)$buff->price;
+            }
+
+         
+            $item->save();
+        }
+
+        $data = CbMarketInventory::select('name', 'buff', 'csgoroll', 'tick')
+                            ->orderBy('buff_sort', 'DESC')
+                            ->get();
+        return $data;
+    }
+
+    private function formatPrice($priceBefore, $priceAfter){
+        return number_format((double)$priceBefore, 2) . ' (' . number_format($priceAfter, 2) . ')';
     }
 }

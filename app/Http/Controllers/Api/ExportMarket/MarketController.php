@@ -188,7 +188,7 @@ class MarketController extends Controller
                     $item->tick = 'buff';
                 }
                 $item->buff = $this->formatPrice($buff->price, $priceBuff);
-                $item->buff_sort = number_format($priceBuff, 2);
+                $item->buff_sort = (double)$buff->price;
             }
 
             // csgoempire
@@ -225,7 +225,7 @@ class MarketController extends Controller
     public function checkReady(){
         $marketInventoryCount = MarketInventory::count();
         $marketCsgorollCount = MarketCsgoroll::count();
-        if($marketInventoryCount == $marketCsgorollCount) {
+        if($marketCsgorollCount > 0) {
             return 1;
         }
         return 0;

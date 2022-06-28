@@ -19,6 +19,8 @@ Route::get('/{requestID}/list', 'ProductController@list')->name('product.list');
 Route::get('/{requestID}/detail', 'ProductController@detail')->name('product.detail');
 
 
+Route::get('/csgoroll-buff/product/list', 'ProductController@buffCsgoroll')->name('csgoroll_buff.list');
+
 Route::get('notification', 'DiscordNotification@notification');
 
 Route::get('/migrate', function(){

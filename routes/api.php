@@ -34,5 +34,15 @@ Route::prefix('v1')->group(function () {
         Route::get('market/download-data', 'MarketController@downloadData');
         Route::get('market/check-ready', 'MarketController@checkReady');
     });
+
+
+    Route::group(['namespace' => 'CbExportMarket'], function () {
+        Route::get('cb/market/list/inventory', 'CbMarketController@listInventory');
+        Route::post('cb/market/buff', 'CbMarketController@buff');
+        Route::post('cb/market/csgoroll', 'CbMarketController@csgoroll');
+
+        Route::get('cb/market/download-data', 'CbMarketController@downloadData');
+        Route::get('cb/market/test', 'CbMarketController@setInventory');
+    });
 });
 
