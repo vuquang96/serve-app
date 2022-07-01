@@ -78,7 +78,9 @@ class CbMarketController extends Controller
         $rateBuff               = $data['buff'];
         $rateCsgoroll           = $data['csgoroll'];
         $desiredRatio           = $data['desired_ratio'];
+        $rate_bonus_csgoroll    = $data['rate_bonus_csgoroll'];
         $desiredRatioBuff       = (100 + (double)$desiredRatio) / 100;
+        $rateBonusCsgoroll      = (100 + (double)$rate_bonus_csgoroll) / 100;
 
         $marketInventory = CbMarketInventory::all();
 
@@ -108,7 +110,7 @@ class CbMarketController extends Controller
             // csgoroll
             if($csgoroll) {
                 if($csgoroll->price != 0) {
-                    $priceCsgoroll = (double)$csgoroll->price  * (double)$rateCsgoroll;
+                    $priceCsgoroll = ((double)$csgoroll->price * $rateBonusCsgoroll)  * (double)$rateCsgoroll;
                
                     $item->csgoroll_rate = $priceCsgoroll;
                     $item->csgoroll = $this->formatPrice($csgoroll->price, $priceCsgoroll);
@@ -120,13 +122,13 @@ class CbMarketController extends Controller
 
             if($priceBuff != 0 && $priceCsgoroll != 0) {
                 if($priceBuff < $priceCsgoroll) {
-                    $priceBuffRate = (double)$buff->price * (double)$rateBuff;
+                    /*$priceBuffRate = (double)$buff->price * (double)$rateBuff;
                     $priceCsgorollRate = (double)$csgoroll->price  * (double)$rateCsgoroll;
                     $item->rate = ($priceCsgorollRate / $priceBuffRate) * 100;
-                    $item->rate = $item->rate - 100;
+                    $item->rate = $item->rate - 100;*/
 
-                    // $surplus = $priceBuff - ((double)$buff->price * (double)$rateBuff);
-                   // $item->rate = ($surplus / ($priceCsgoroll + $surplus)) * 100;
+                    $item->rate = ($priceCsgoroll / $priceBuff) * 100;
+                    $item->rate = $item->rate - 100;
                 }
             }
 
