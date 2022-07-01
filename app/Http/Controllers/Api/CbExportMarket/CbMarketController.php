@@ -77,9 +77,7 @@ class CbMarketController extends Controller
         $data = $request->all();
         $rateBuff               = $data['buff'];
         $rateCsgoroll           = $data['csgoroll'];
-        $desiredRatio           = $data['desired_ratio'];
         $rate_bonus_csgoroll    = $data['rate_bonus_csgoroll'];
-        $desiredRatioBuff       = (100 + (double)$desiredRatio) / 100;
         $rateBonusCsgoroll      = (100 + (double)$rate_bonus_csgoroll) / 100;
 
         $marketInventory = CbMarketInventory::all();
@@ -98,7 +96,7 @@ class CbMarketController extends Controller
 
             // buff
             if($buff) {
-                $priceBuff = ((double)$buff->price * $desiredRatioBuff) * (double)$rateBuff;
+                $priceBuff = (double)$buff->price * (double)$rateBuff;
 
                 $item->buff = $this->formatPrice($buff->price, $priceBuff);
                 $item->buff_rate = $priceBuff;
