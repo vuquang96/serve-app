@@ -18,10 +18,10 @@ class CreateCbMarketInventoryTable extends Migration
             $table->string('name')->nullable();
             $table->string('buff')->nullable();
             $table->string('csgoroll')->nullable();
-            $table->string('buff_default')->nullable();
-            $table->string('csgoroll_default')->nullable();
+            $table->double('buff_rate')->nullable();
+            $table->double('csgoroll_rate')->nullable();
+            $table->double('rate', 8, 2)->nullable();
             $table->double('buff_sort', 8, 2)->nullable();
-            $table->string('tick')->nullable();
             $table->timestamps();
         });
     }

@@ -51,7 +51,7 @@ class ProductController extends Controller
     public function buffCsgoroll(Request $request)
     {
         $rateBuff               = $data['buff'] ?? 3.7;
-        $rateCsgoroll           = $data['csgoroll'] ?? 14.4;
+        $rateCsgoroll           = $data['csgoroll'] ?? 14.5;
         $inventory = $this->getInventory($request);
 
         return view('buff_csgoroll.list', compact('rateBuff', 'rateCsgoroll', 'inventory'));
@@ -60,7 +60,7 @@ class ProductController extends Controller
     private function getInventory(Request $request){
         $data = $request->all();
         $rateBuff               = $data['buff'] ?? 3.7;
-        $rateCsgoroll           = $data['csgoroll'] ?? 14.4;
+        $rateCsgoroll           = $data['csgoroll'] ?? 14.5;
 
         $marketInventory = CbMarketInventory::all();
 

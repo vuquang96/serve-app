@@ -38,7 +38,6 @@ class CbMarketController extends Controller
     }
 
 
-
     public function csgoroll(Request $request){
         CbMarketCsgoroll::truncate();
 
@@ -78,6 +77,8 @@ class CbMarketController extends Controller
         $data = $request->all();
         $rateBuff               = $data['buff'];
         $rateCsgoroll           = $data['csgoroll'];
+        $desiredRatio           = $data['desired_ratio'];
+        $desiredRatioBuff       = (100 + (double)$desiredRatio) / 100;
 
         $marketInventory = CbMarketInventory::all();
 
@@ -89,51 +90,51 @@ class CbMarketController extends Controller
             $buff       = CbMarketBuff::where('name', $name)
                                         ->selectRaw('name, price, CAST(price as DECIMAL(9,2)) _price')
                                         ->orderBy('_price', 'ASC')->first();
-            $max        = 0;
-            $min        = 0;
+            $item->rate = null;
+            $priceBuff      = 0;
+            $priceCsgoroll  = 0;
 
             // buff
             if($buff) {
-                $priceBuff = (double)$buff->price * (double)$rateBuff;
-
-                /*if($priceBuff > $max) {
-                    $max = $priceBuff;
-                    $item->tick = 'buff';
-                }*/
-
-                // min
-                $min = $priceBuff;
-                $item->tick = 'buff';
+                $priceBuff = ((double)$buff->price * $desiredRatioBuff) * (double)$rateBuff;
 
                 $item->buff = $this->formatPrice($buff->price, $priceBuff);
+                $item->buff_rate = $priceBuff;
                 $item->buff_sort = (double)$buff->price;
+            } else {
+                $item->buff_rate = 0;
             }
 
             // csgoroll
             if($csgoroll) {
                 if($csgoroll->price != 0) {
                     $priceCsgoroll = (double)$csgoroll->price  * (double)$rateCsgoroll;
-                
-                    /*if($priceCsgoroll > $max) {
-                        $max = $priceCsgoroll;
-                        $item->tick = 'csgoroll';
-                    }*/
-
-                    if($priceCsgoroll < $min) {
-                        $min = $priceCsgoroll;
-                        $item->tick = 'csgoroll';
-                    }
-
+               
+                    $item->csgoroll_rate = $priceCsgoroll;
                     $item->csgoroll = $this->formatPrice($csgoroll->price, $priceCsgoroll);
                 } else {
                     $item->csgoroll = '';
+                    $item->csgoroll_rate = 0;
+                }
+            }
+
+            if($priceBuff != 0 && $priceCsgoroll != 0) {
+                if($priceBuff < $priceCsgoroll) {
+                    $priceBuffRate = (double)$buff->price * (double)$rateBuff;
+                    $priceCsgorollRate = (double)$csgoroll->price  * (double)$rateCsgoroll;
+                    $item->rate = ($priceCsgorollRate / $priceBuffRate) * 100;
+                    $item->rate = $item->rate - 100;
+
+                    // $surplus = $priceBuff - ((double)$buff->price * (double)$rateBuff);
+                   // $item->rate = ($surplus / ($priceCsgoroll + $surplus)) * 100;
                 }
             }
 
             $item->save();
         }
 
-        $data = CbMarketInventory::select('name', 'buff', 'csgoroll', 'tick')
+        $data = CbMarketInventory::select('name', 'buff', 'csgoroll', 'rate')
+                            ->orderBy('rate', 'DESC')
                             ->orderBy('buff_sort', 'DESC')
                             ->get()->toArray();
         return $data;
@@ -148,31 +149,34 @@ class CbMarketController extends Controller
 
         $arrayName          = [];
         $dataInsert         = [];
+
         $buffs              = CbMarketBuff::where(DB::raw('CAST(price as DECIMAL(9,2))'), '>=', $priceMin)
                                 ->where(DB::raw('CAST(price as DECIMAL(9,2))'), '<=', $priceMax)
                                // ->skip(0)->take(20)
                                 ->selectRaw('name, price, CAST(price as DECIMAL(9,2)) _price')
                                 ->get();
 
-        foreach($buffs as $item) {
-            if(!array_search($item->name, $arrayName)) {
-                $tmp = [
-                    'name'              => $item->name,
-                    'buff'              => (double)$item->price,
-                    'created_at'        => Carbon::now(),
-                    'updated_at'        => Carbon::now(),
-                ];
+        if($buffs) {
+            foreach($buffs as $item) {
+                if(!array_search($item->name, $arrayName)) {
+                    $tmp = [
+                        'name'              => $item->name,
+                        'buff'              => (double)$item->price,
+                        'created_at'        => Carbon::now(),
+                        'updated_at'        => Carbon::now(),
+                    ];
 
-                $dataInsert[] = $tmp;
+                    $dataInsert[] = $tmp;
 
-                $arrayName[] = $item->name;
+                    $arrayName[] = $item->name;
+                }
             }
-        }
 
-        $dataInsertChunk = array_chunk($dataInsert, 200);
-        
-        foreach($dataInsertChunk as $item) {
-            CbMarketInventory::insert($item);
+            $dataInsertChunk = array_chunk($dataInsert, 200);
+            
+            foreach($dataInsertChunk as $item) {
+                CbMarketInventory::insert($item);
+            }
         }
     }
 }
